@@ -18,6 +18,9 @@ import { usePresetGasEstimate } from '../hooks/useGasEstimate';
 import { useTransactionHistory, TransactionRecord } from '../hooks/useTransactionHistory';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN, enUS } from 'date-fns/locale';
+// 新增API数据源hooks
+import { useTokenOverview, useTokenTransactions, useTokenHolders, useTokenPrice } from '../hooks/useTokenData';
+import { useApiError } from '../hooks/useApiError';
 
 const TokenInfo: React.FC = () => {
   const { language } = useLanguage();
@@ -41,6 +44,38 @@ const TokenInfo: React.FC = () => {
   // 获取真实的代币信息
   const tokenInfo = useTokenInfo();
   const { data: userBalance, isLoading: balanceLoading } = useTokenBalance(address);
+  
+  // 使用新的API数据源
+  const tokenAddress = getContractAddress('YesCoin');
+  const { 
+    data: apiTokenOverview, 
+    error: overviewError, 
+    isLoading: overviewLoading,
+    mutate: refreshOverview 
+  } = useTokenOverview(tokenAddress);
+  
+  const { 
+    data: apiTransactions, 
+    error: transactionsError, 
+    isLoading: transactionsLoading,
+    mutate: refreshTransactions 
+  } = useTokenTransactions(tokenAddress, { limit: 50 });
+  
+  const { 
+    data: holdersData, 
+    error: holdersError, 
+    isLoading: holdersLoading,
+    mutate: refreshHolders 
+  } = useTokenHolders(tokenAddress, { limit: 100 });
+  
+  const { 
+    data: priceData, 
+    error: priceError, 
+    isLoading: priceLoading,
+    mutate: refreshPrice 
+  } = useTokenPrice(tokenAddress);
+
+  const { error: apiError, clearError } = useApiError();
   
   // 交易历史hook
   const {
@@ -69,22 +104,23 @@ const TokenInfo: React.FC = () => {
   // Gas费估算
   const gasEstimate = usePresetGasEstimate('TOKEN_TRANSFER');
   
-  // 代币概览数据
+  // 合并API数据和本地数据
   const tokenOverview = {
-    name: tokenInfo.name,
-    symbol: tokenInfo.symbol,
+    name: apiTokenOverview?.name || tokenInfo.name,
+    symbol: apiTokenOverview?.symbol || tokenInfo.symbol,
     blockchain: 'BSC (BEP-20)',
-    totalSupply: tokenInfo.totalSupply,
-    contract: '0xeccf5b5b0a7c482da8008faf8a9f20a2d51005f9',
+    totalSupply: apiTokenOverview?.totalSupply || tokenInfo.totalSupply,
+    contract: tokenAddress,
+    decimals: apiTokenOverview?.decimals || tokenInfo.decimals || 18,
   };
 
   const marketMetrics = {
-    currentPrice: '$0.000012',
-    marketCap: '$12,500,000',
-    holders: '15,234',
-    circulatingSupply: '750,000,000,000',
-    volume24h: '$2,340,000',
-    priceChange24h: '+15.67%',
+    currentPrice: priceData?.price ? `$${priceData.price.toFixed(8)}` : '$0.000012',
+    marketCap: apiTokenOverview?.marketCap ? `$${(apiTokenOverview.marketCap / 1000000).toFixed(2)}M` : '$12.5M',
+    holders: holdersData?.totalHolders?.toLocaleString() || '15,234',
+    circulatingSupply: apiTokenOverview?.circulatingSupply ? (Number(apiTokenOverview.circulatingSupply) / 1e12).toFixed(0) + 'T' : '750T',
+    volume24h: apiTokenOverview?.volume24h ? `$${(apiTokenOverview.volume24h / 1000000).toFixed(2)}M` : '$2.34M',
+    priceChange24h: priceData?.priceChange24h ? `${priceData.priceChange24h > 0 ? '+' : ''}${priceData.priceChange24h.toFixed(2)}%` : '+15.67%',
   };
 
   // 增强的复制功能
@@ -111,13 +147,21 @@ const TokenInfo: React.FC = () => {
     }
   };
   
-  // 刷新功能
+  // 增强的刷新功能
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refreshHistory();
+      // 刷新所有数据源
+      await Promise.all([
+        refreshHistory(),
+        refreshOverview(),
+        refreshTransactions(),
+        refreshHolders(),
+        refreshPrice()
+      ]);
       toast.success(language === 'zh' ? '数据已刷新' : 'Data refreshed');
     } catch (error) {
+      console.error('刷新失败:', error);
       toast.error(language === 'zh' ? '刷新失败' : 'Refresh failed');
     } finally {
       setTimeout(() => setIsRefreshing(false), 1000);
@@ -720,12 +764,24 @@ const TokenInfo: React.FC = () => {
             <div className="flex-1 lg:text-right">
               <div className="flex flex-col lg:items-end gap-2">
                 <div className="text-3xl lg:text-4xl font-black" style={{color: 'var(--text-primary)'}}>
-                  $0.000012
+                  {priceLoading ? (
+                    <div className="animate-pulse bg-gray-300 h-10 w-32 rounded"></div>
+                  ) : (
+                    `$${priceData?.price?.toFixed(8) || '0.000000'}`
+                  )}
                 </div>
                 <div className={`flex items-center gap-1 text-sm font-medium`}
-                     style={{color: 'var(--graffiti-green)'}}>
-                  <TrendingUp className="w-4 h-4" />
-                  +15.67%
+                     style={{color: priceData?.change24h && priceData.change24h >= 0 ? 'var(--graffiti-green)' : 'var(--graffiti-pink)'}}>
+                  {priceData?.change24h && priceData.change24h >= 0 ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4" />
+                  )}
+                  {priceLoading ? (
+                    <div className="animate-pulse bg-gray-300 h-4 w-16 rounded"></div>
+                  ) : (
+                    `${priceData?.change24h >= 0 ? '+' : ''}${priceData?.change24h?.toFixed(2) || '0.00'}%`
+                  )}
                 </div>
               </div>
             </div>
@@ -740,7 +796,11 @@ const TokenInfo: React.FC = () => {
               <DollarSign className="w-6 h-6" style={{color: 'var(--graffiti-green)'}} />
             </div>
             <div className="text-xl font-black mb-1" style={{color: 'var(--text-primary)'}}>
-              $12,500,000
+              {overviewLoading ? (
+                <div className="animate-pulse bg-gray-300 h-6 w-24 rounded mx-auto"></div>
+              ) : (
+                `$${tokenOverview?.marketCap ? (tokenOverview.marketCap / 1000000).toFixed(2) + 'M' : '0'}`
+              )}
             </div>
             <div className="text-sm" style={{color: 'var(--text-muted)'}}>
               {language === 'zh' ? '市值' : 'Market Cap'}
@@ -753,7 +813,11 @@ const TokenInfo: React.FC = () => {
               <BarChart3 className="w-6 h-6" style={{color: 'var(--graffiti-blue)'}} />
             </div>
             <div className="text-xl font-black mb-1" style={{color: 'var(--text-primary)'}}>
-              $2,340,000
+              {overviewLoading ? (
+                <div className="animate-pulse bg-gray-300 h-6 w-24 rounded mx-auto"></div>
+              ) : (
+                `$${tokenOverview?.volume24h ? (tokenOverview.volume24h / 1000000).toFixed(2) + 'M' : '0'}`
+              )}
             </div>
             <div className="text-sm" style={{color: 'var(--text-muted)'}}>
               {language === 'zh' ? '24h交易量' : '24h Volume'}
@@ -766,7 +830,11 @@ const TokenInfo: React.FC = () => {
               <Users className="w-6 h-6" style={{color: 'var(--graffiti-yellow)'}} />
             </div>
             <div className="text-xl font-black mb-1" style={{color: 'var(--text-primary)'}}>
-              15,234
+              {holdersLoading ? (
+                <div className="animate-pulse bg-gray-300 h-6 w-20 rounded mx-auto"></div>
+              ) : (
+                holdersData?.totalHolders?.toLocaleString() || '0'
+              )}
             </div>
             <div className="text-sm" style={{color: 'var(--text-muted)'}}>
               {language === 'zh' ? '持有者' : 'Holders'}
@@ -779,7 +847,11 @@ const TokenInfo: React.FC = () => {
               <Coins className="w-6 h-6" style={{color: 'var(--graffiti-purple)'}} />
             </div>
             <div className="text-xl font-black mb-1" style={{color: 'var(--text-primary)'}}>
-              1000T
+              {overviewLoading ? (
+                <div className="animate-pulse bg-gray-300 h-6 w-16 rounded mx-auto"></div>
+              ) : (
+                `${tokenOverview?.totalSupply ? (tokenOverview.totalSupply / 1e15).toFixed(0) + 'T' : '1000T'}`
+              )}
             </div>
             <div className="text-sm" style={{color: 'var(--text-muted)'}}>
               {language === 'zh' ? '总供应量' : 'Total Supply'}
@@ -845,27 +917,71 @@ const TokenInfo: React.FC = () => {
                 <div className="space-y-3 font-bold">
                   <p className="flex justify-between text-sm sm:text-base">
                     <span style={{color: 'var(--text-muted)'}}>{language === 'zh' ? '流通供应量:' : 'Circulating Supply:'}</span> 
-                    <span style={{color: 'var(--text-dark)'}}>-</span>
+                    <span style={{color: 'var(--text-dark)'}}>
+                      {overviewLoading ? (
+                        <div className="animate-pulse bg-gray-300 h-4 w-16 rounded"></div>
+                      ) : (
+                        tokenOverview?.circulatingSupply ? 
+                          `${(tokenOverview.circulatingSupply / 1e15).toFixed(0)}T` : 
+                          '-'
+                      )}
+                    </span>
                   </p>
                   <p className="flex justify-between text-sm sm:text-base">
                     <span style={{color: 'var(--text-muted)'}}>{language === 'zh' ? '持有者数量:' : 'Holders:'}</span> 
-                    <span style={{color: 'var(--text-dark)'}}>-</span>
+                    <span style={{color: 'var(--text-dark)'}}>
+                      {holdersLoading ? (
+                        <div className="animate-pulse bg-gray-300 h-4 w-16 rounded"></div>
+                      ) : (
+                        holdersData?.totalHolders?.toLocaleString() || '-'
+                      )}
+                    </span>
                   </p>
                   <p className="flex justify-between text-sm sm:text-base">
                     <span style={{color: 'var(--text-muted)'}}>{language === 'zh' ? '当前价格:' : 'Current Price:'}</span> 
-                    <span style={{color: 'var(--text-dark)'}}>-</span>
+                    <span style={{color: 'var(--text-dark)'}}>
+                      {priceLoading ? (
+                        <div className="animate-pulse bg-gray-300 h-4 w-20 rounded"></div>
+                      ) : (
+                        priceData?.price ? `$${priceData.price.toFixed(8)}` : '-'
+                      )}
+                    </span>
                   </p>
                   <p className="flex justify-between text-sm sm:text-base">
                     <span style={{color: 'var(--text-muted)'}}>{language === 'zh' ? '24h 交易量:' : '24h Volume:'}</span> 
-                    <span style={{color: 'var(--text-dark)'}}>-</span>
+                    <span style={{color: 'var(--text-dark)'}}>
+                      {overviewLoading ? (
+                        <div className="animate-pulse bg-gray-300 h-4 w-20 rounded"></div>
+                      ) : (
+                        tokenOverview?.volume24h ? 
+                          `$${(tokenOverview.volume24h / 1000000).toFixed(2)}M` : 
+                          '-'
+                      )}
+                    </span>
                   </p>
                   <p className="flex justify-between text-sm sm:text-base">
                     <span style={{color: 'var(--text-muted)'}}>{language === 'zh' ? '市值:' : 'Market Cap:'}</span> 
-                    <span style={{color: 'var(--text-dark)'}}>-</span>
+                    <span style={{color: 'var(--text-dark)'}}>
+                      {overviewLoading ? (
+                        <div className="animate-pulse bg-gray-300 h-4 w-20 rounded"></div>
+                      ) : (
+                        tokenOverview?.marketCap ? 
+                          `$${(tokenOverview.marketCap / 1000000).toFixed(2)}M` : 
+                          '-'
+                      )}
+                    </span>
                   </p>
                   <p className="flex justify-between text-sm sm:text-base">
                     <span style={{color: 'var(--text-muted)'}}>FDV:</span> 
-                    <span style={{color: 'var(--text-dark)'}}>-</span>
+                    <span style={{color: 'var(--text-dark)'}}>
+                      {overviewLoading ? (
+                        <div className="animate-pulse bg-gray-300 h-4 w-20 rounded"></div>
+                      ) : (
+                        tokenOverview?.fdv ? 
+                          `$${(tokenOverview.fdv / 1000000).toFixed(2)}M` : 
+                          '-'
+                      )}
+                    </span>
                   </p>
                 </div>
               </div>
