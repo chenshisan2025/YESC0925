@@ -1,0 +1,251 @@
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Roboto+Condensed:wght@400;700&family=Noto+Sans+SC:wght@700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- 全局风格与设计语言 (V6.0 - 街头涂鸦主题) --- */
+:root {
+  /* 核心设计变量 - 严格按照设计文档 */
+  --bg-dark-brick: #1a1a1a;
+  --text-light-gray: #EAEAEA;
+  --card-bg-concrete: rgba(40, 40, 40, 0.8);
+  --border-color: #EAEAEA;
+  --cta-yellow-spray: #FFF500;
+  --cta-pink-spray: #FF0077;
+  --highlight-cyan-spray: #00FFFF;
+  
+  /* 主要背景和文本颜色 */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: rgba(80, 80, 80, 0.8);
+  --text-primary: #EAEAEA;
+  --text-secondary: #B0B0B0;
+  --text-muted: #808080;
+  --text-dark: #EAEAEA;
+  --text-light: #FFFFFF;
+  
+  /* 卡片和背景 */
+  --card-bg: rgba(40, 40, 40, 0.8);
+  --bg-light: rgba(60, 60, 60, 0.6);
+  --border-light: rgba(234, 234, 234, 0.3);
+  --hover-bg: rgba(255, 255, 255, 0.1);
+  
+  /* 涂鸦主题色彩 */
+  --graffiti-yellow: #FFF500;
+  --graffiti-pink: #FF0077;
+  --graffiti-purple: #8A2BE2;
+  --graffiti-green: #00FF88;
+  --graffiti-blue: #00FFFF;
+  
+  /* 强调色 */
+  --accent-yellow: #FFF500;
+  --accent-pink: #FF0077;
+  --accent-green: #00FF88;
+  --accent-purple: #8A2BE2;
+  --accent-blue: #00FFFF;
+  --accent-cyan: #00FFFF;
+  --accent-indigo: #6366f1;
+  
+  /* 渐变效果 */
+  --accent-gradient: linear-gradient(45deg, #FF0077, #FFF500, #00FFFF);
+  --gradient-bg: linear-gradient(135deg, rgba(255, 0, 119, 0.1), rgba(255, 245, 0, 0.1));
+  
+  /* 浅色变体用于背景 */
+  --graffiti-yellow-light: rgba(255, 245, 0, 0.1);
+  --graffiti-pink-light: rgba(255, 0, 119, 0.1);
+  --graffiti-blue-light: rgba(0, 255, 255, 0.1);
+  --graffiti-green-light: rgba(0, 255, 136, 0.1);
+  --graffiti-purple-light: rgba(138, 43, 226, 0.1);
+  
+  /* 实用工具色彩 */
+  --bg-warning: rgba(255, 245, 0, 0.1);
+  --accent-green-spray: #00FF88;
+  --accent-blue-spray: #00FFFF;
+}
+
+body {
+  background-color: #1a1a1a;
+  color: var(--text-light-gray);
+  font-family: 'Roboto Condensed', 'Noto Sans SC', sans-serif;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23333333' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+  scroll-behavior: smooth;
+}
+
+/* 中文字体适配 */
+:lang(zh-CN) body, 
+:lang(zh-CN) .font-graffiti-title {
+  font-family: 'Noto Sans SC', 'Roboto Condensed', sans-serif;
+  font-weight: 700;
+}
+
+/* 涂鸦标题样式 */
+.graffiti-title { 
+  font-family: 'Bangers', cursive;
+  background: linear-gradient(45deg, var(--cta-pink-spray), var(--cta-yellow-spray), var(--highlight-cyan-spray));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 
+    0 0 5px rgba(255, 255, 255, 0.2),
+    3px 3px 5px rgba(0,0,0,0.5);
+}
+
+.font-graffiti-title { 
+  font-family: 'Bangers', cursive;
+  background: linear-gradient(45deg, var(--cta-pink-spray), var(--cta-yellow-spray), var(--highlight-cyan-spray));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 
+    0 0 5px rgba(255, 255, 255, 0.2),
+    3px 3px 5px rgba(0,0,0,0.5);
+}
+
+/* 涂鸦按钮 */
+.graffiti-button {
+  border: 3px solid var(--text-light-gray);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.graffiti-button:hover {
+  transform: translateY(-3px) rotate(-2deg);
+  box-shadow: 0px 8px 15px rgba(0,0,0,0.3);
+}
+
+/* 按钮配色 */
+.btn-yellow-spray { 
+  background-color: var(--cta-yellow-spray); 
+  color: var(--bg-dark-brick); 
+  border-color: var(--cta-yellow-spray); 
+}
+
+.btn-pink-spray { 
+  background-color: var(--cta-pink-spray); 
+  color: var(--text-light-gray); 
+  border-color: var(--cta-pink-spray); 
+}
+
+.btn-blue-spray { 
+  background-color: var(--highlight-cyan-spray); 
+  color: var(--bg-dark-brick); 
+  border-color: var(--highlight-cyan-spray); 
+}
+
+.btn-green-spray { 
+  background-color: #00FF88; 
+  color: var(--bg-dark-brick); 
+  border-color: #00FF88; 
+}
+
+.btn-purple-spray { 
+  background-color: #8A2BE2; 
+  color: var(--text-light-gray); 
+  border-color: #8A2BE2; 
+}
+
+.btn-red-spray { 
+  background-color: #FF4444; 
+  color: var(--text-light-gray); 
+  border-color: #FF4444; 
+}
+
+/* 导航链接交互 */
+.nav-link-graffiti-underline {
+  position: relative;
+  color: var(--text-light-gray);
+}
+
+.nav-link-graffiti-underline::after {
+  content: ''; 
+  position: absolute; 
+  bottom: -8px; 
+  left: 0;
+  width: 0; 
+  height: 4px;
+  background-color: var(--cta-yellow-spray);
+  transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.nav-link-graffiti-underline:hover::after { 
+  width: 100%; 
+}
+
+/* 内容板块卡片 */
+.content-card {
+  background-color: var(--card-bg-concrete);
+  border: 2px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.hover-card-rotate {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-card-rotate:hover {
+  transform: rotate(1deg) scale(1.02);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.graffiti-card {
+  background-color: var(--card-bg-concrete);
+  border: 2px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  transform: rotate(-1deg);
+}
+
+.graffiti-card:hover {
+  transform: rotate(1deg) scale(1.02);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* FAQ 折叠效果 */
+details > summary { 
+  list-style: none; 
+}
+
+details > summary::-webkit-details-marker { 
+  display: none; 
+}
+
+details .faq-icon { 
+  transition: transform 0.3s ease; 
+}
+
+details[open] .faq-icon { 
+  transform: rotate(45deg); 
+}
+
+/* 进度条 */
+.progress-bar {
+  width: 100%; 
+  height: 24px; 
+  border: 2px solid var(--border-color); 
+  background-color: rgba(0,0,0,0.5); 
+  padding: 2px;
+}
+
+.progress-bar-inner {
+  height: 100%; 
+  background-color: var(--highlight-cyan-spray);
+}
+
+/* 画廊滚动条样式 */
+.gallery-scrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.gallery-scrollbar::-webkit-scrollbar-track {
+  background: #444;
+}
+
+.gallery-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--cta-yellow-spray);
+}
+
+.gallery-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--cta-yellow-spray) #444;
+}
