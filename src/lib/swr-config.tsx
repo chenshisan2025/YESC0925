@@ -27,12 +27,7 @@ export const swrConfig: SWRConfiguration = {
     console.error('SWR Error:', error, 'Key:', key);
     
     // 使用全局错误处理器
-    errorHandler.handleError(
-      error,
-      ErrorType.API_ERROR,
-      ErrorSeverity.MEDIUM,
-      { swrKey: key }
-    );
+    errorHandler.handleError(error, true);
   },
   
   // 全局成功处理
@@ -87,7 +82,7 @@ export const cacheKeys = {
   tokenTransactions: (address: string, page: number, offset: number) => 
     `token-transactions-${address.toLowerCase()}-${page}-${offset}`,
   tokenTransfers: (tokenAddress: string, userAddress: string | undefined, page: number, offset: number) => 
-    `token-transfers-${tokenAddress.toLowerCase()}-${userAddress?.toLowerCase() || 'all'}-${page}-${offset}`,
+    `token-transfers-${tokenAddress.toLowerCase()}-${userAddress ? userAddress.toLowerCase() : 'all'}-${page}-${offset}`,
   
   // 持有者相关
   tokenHolders: (address: string, page: number, offset: number) => 

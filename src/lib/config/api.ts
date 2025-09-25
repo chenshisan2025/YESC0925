@@ -131,3 +131,17 @@ export const validateEnvironment = () => {
   
   return warnings;
 };
+
+// Combined API Configuration
+export const apiConfig = {
+  bscscan: bscscanConfig,
+  pancakeSwap: pancakeSwapConfig,
+  oneInch: oneInchConfig,
+  coinGecko: coinGeckoConfig,
+  cache: cacheConfig,
+  bsc: bscConfig,
+  rateLimit: rateLimitConfig,
+  retry: retryConfig,
+  endpoints: apiEndpoints,
+  validate: validateEnvironment,
+};

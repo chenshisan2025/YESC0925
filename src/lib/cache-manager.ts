@@ -355,6 +355,7 @@ class CacheManager {
 }
 
 // 创建不同用途的缓存实例
+export const cacheManager = new CacheManager(config.cache.maxSize, CacheStrategy.LRU);
 export const apiCache = new CacheManager(config.cache.maxSize, CacheStrategy.LRU);
 export const priceCache = new CacheManager(100, CacheStrategy.TTL);
 export const tokenCache = new CacheManager(200, CacheStrategy.LFU);

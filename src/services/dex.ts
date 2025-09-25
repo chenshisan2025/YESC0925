@@ -18,9 +18,9 @@ class PancakeSwapAPI {
   private retryAttempts: number;
 
   constructor() {
-    this.baseURL = apiConfig.pancakeswap.baseURL;
-    this.timeout = apiConfig.pancakeswap.timeout;
-    this.retryAttempts = apiConfig.pancakeswap.retryAttempts;
+    this.baseURL = apiConfig.pancakeSwap.baseURL;
+    this.timeout = apiConfig.pancakeSwap.timeout;
+    this.retryAttempts = apiConfig.pancakeSwap.retries;
   }
 
   private async makeRequest<T>(
