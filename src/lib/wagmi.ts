@@ -12,21 +12,23 @@ export const config = createConfig({
   connectors: [
     injected(),
     metaMask(),
-    ...(WALLETCONNECT_PROJECT_ID ? [walletConnect({
-      projectId: WALLETCONNECT_PROJECT_ID,
-      metadata: {
-        name: import.meta.env.VITE_APP_NAME || 'YesCoin Web3',
-        description: import.meta.env.VITE_APP_DESCRIPTION || 'YesCoin Web3 DeFi Platform',
-        url: import.meta.env.VITE_APP_URL || 'https://yescoin-web3.vercel.app',
-        icons: [import.meta.env.VITE_APP_ICON || 'https://yescoin-web3.vercel.app/favicon.ico']
-      }
-    })] : []),
   ],
   transports: {
     [bsc.id]: http(BSC_RPC_URL),
     [bscTestnet.id]: http(BSC_TESTNET_RPC_URL),
   },
 });
+
+// 备用配置：如果需要 WalletConnect，请设置 VITE_WALLETCONNECT_PROJECT_ID 环境变量
+// ...(WALLETCONNECT_PROJECT_ID ? [walletConnect({
+//   projectId: WALLETCONNECT_PROJECT_ID,
+//   metadata: {
+//     name: import.meta.env.VITE_APP_NAME || 'YesCoin Web3',
+//     description: import.meta.env.VITE_APP_DESCRIPTION || 'YesCoin Web3 DeFi Platform',
+//     url: import.meta.env.VITE_APP_URL || 'https://yescoin-web3.vercel.app',
+//     icons: [import.meta.env.VITE_APP_ICON || 'https://yescoin-web3.vercel.app/favicon.ico']
+//   }
+// })] : [])
 
 // 导出链配置
 export { bsc, bscTestnet };

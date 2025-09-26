@@ -11,8 +11,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          wagmi: ['wagmi', '@wagmi/core', '@wagmi/connectors'],
-          web3: ['viem'],
           ui: ['framer-motion', 'lucide-react', 'react-hot-toast', 'sonner'],
           router: ['react-router-dom'],
           query: ['@tanstack/react-query', 'swr'],
@@ -22,13 +20,7 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1000,
     target: 'esnext',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    }
+    minify: 'esbuild'
   },
   plugins: [
     react({
