@@ -6,7 +6,7 @@ import { ArrowRight, Target, Palette, Rocket, Users, ExternalLink, TrendingUp, S
 
 const Home: React.FC = () => {
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations.zh;
 
   // 模拟统计数据
   const stats = [

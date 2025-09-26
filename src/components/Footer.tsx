@@ -4,7 +4,7 @@ import { translations } from '../lib/translations';
 
 export default function Footer() {
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations.zh;
   
   return (
     <footer className="bg-black text-white py-8" style={{ borderTop: '3px solid var(--cta-yellow-spray)' }}>

@@ -18,7 +18,7 @@ export default function Header() {
   const location = useLocation();
   const { language, setLanguage } = useLanguage();
 
-  const t = translations[language];
+  const t = translations[language] || translations.zh;
 
   const navigation = [
     { name: t.nav.home, href: '/' },
