@@ -180,10 +180,11 @@ export interface ApiConfig {
 
 // Error Types
 export interface ApiError {
-  code: string;
+  code: string | number;
   message: string;
   details?: any;
   timestamp: number;
+  retryCount?: number;
 }
 
 // Cache Types

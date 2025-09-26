@@ -7,7 +7,7 @@ import type {
   ApiResponse,
   ApiError
 } from '../types/api';
-import { apiConfig } from '../lib/config/api';
+import { apiConfig } from '../lib/config';
 import { errorHandler, ErrorType, ErrorSeverity, retry } from '../lib/error-handler';
 import { apiCache, priceCache, cacheKeys } from '../lib/cache-manager';
 

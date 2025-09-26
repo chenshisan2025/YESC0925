@@ -1,5 +1,5 @@
-import { SWRConfig, SWRConfiguration } from 'swr';
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
+import { SWRConfiguration, SWRConfig } from 'swr';
 import { toast } from 'sonner';
 import { errorHandler, ErrorType, ErrorSeverity } from './error-handler';
 import { apiCache, priceCache } from './cache-manager';

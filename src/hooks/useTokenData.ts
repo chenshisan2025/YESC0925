@@ -8,7 +8,7 @@ import type {
 } from '../types/api';
 import { BSCScanService } from '../services/bscscan';
 import { DEXService } from '../services/dex';
-import { apiConfig } from '../lib/config/api';
+import { apiConfig } from '../lib/config';
 
 // SWR 配置
 const swrConfig = {

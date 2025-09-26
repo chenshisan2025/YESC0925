@@ -197,4 +197,7 @@ if (config.dev.debugApi) {
   }
 }
 
+// 导出配置对象的别名
+export const apiConfig = config;
+
 export default config;

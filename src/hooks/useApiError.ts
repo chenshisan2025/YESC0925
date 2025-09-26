@@ -47,9 +47,7 @@ export const useApiError = (apiName: string) => {
     // 使用全局错误处理器
     errorHandler.handleError(
       new Error(error.message),
-      ErrorType.API_ERROR,
-      ErrorSeverity.MEDIUM,
-      { apiName, ...error.details }
+      ErrorType.API_ERROR
     );
   }, [apiName]);
 
@@ -196,6 +194,7 @@ export function useApiErrorOld() {
 // 全局错误处理 Hook
 export function useGlobalErrorHandler() {
   const [globalErrors, setGlobalErrors] = useState<Map<string, ApiError>>(new Map());
+  const { setError, shouldRetry, getRetryDelay } = useApiErrorOld();
 
   // 添加全局错误
   const addGlobalError = useCallback((key: string, error: ApiError) => {
@@ -245,7 +244,8 @@ export function useRetry<T>(
 ) {
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const { setError, shouldRetry, getRetryDelay } = useApiError();
+  // 使用旧版本的错误处理函数
+  const { setError, shouldRetry, getRetryDelay } = useApiErrorOld();
 
   const executeWithRetry = useCallback(async (): Promise<T | null> => {
     setIsRetrying(true);

@@ -391,4 +391,7 @@ export const clearAllApiCache = () => {
   tokenCache.clear();
 };
 
+// 导出缓存管理器实例
+export const cacheManager = apiCache;
+
 export default apiCache;
