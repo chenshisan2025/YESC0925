@@ -1,0 +1,69 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "env": {
+    "VITE_BSC_RPC_URL": "https://bsc-dataseed1.binance.org/",
+    "VITE_BSC_TESTNET_RPC_URL": "https://data-seed-prebsc-1-s1.binance.org:8545/",
+    "VITE_BSC_CHAIN_ID": "56",
+    "VITE_BSC_TESTNET_CHAIN_ID": "97",
+    "VITE_PANCAKESWAP_API_URL": "https://api.pancakeswap.info/api/v2",
+    "VITE_ONEINCH_API_URL": "https://api.1inch.dev",
+    "VITE_COINGECKO_API_URL": "https://api.coingecko.com/api/v3",
+    "VITE_BSCSCAN_API_URL": "https://api.bscscan.com/api",
+    "VITE_APP_NAME": "YesCoin Web3",
+    "VITE_APP_DESCRIPTION": "YesCoin Web3 DeFi Platform",
+    "VITE_API_RATE_LIMIT": "10",
+    "VITE_API_CACHE_DURATION": "600000",
+    "VITE_API_RETRY_ATTEMPTS": "3",
+    "VITE_API_TIMEOUT": "30000",
+    "VITE_ENABLE_ANALYTICS": "true",
+    "VITE_ENABLE_ERROR_REPORTING": "true",
+    "VITE_LOG_LEVEL": "error"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

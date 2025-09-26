@@ -1,9 +1,10 @@
 import { config } from '../lib/config';
 import { errorHandler, ErrorType, ErrorSeverity, retry } from '../lib/error-handler';
 import { apiCache, cacheKeys } from '../lib/cache-manager';
+import { ApiResponse, PaginationParams } from '../types/api';
 
 // BSCScan API响应接口
-interface BSCScanResponse<T = any> {
+interface BSCScanResponse<T = unknown> {
   status: string;
   message: string;
   result: T;
@@ -107,9 +108,14 @@ class BSCScanAPI {
 
     try {
       const result = await retry(async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), config.bscscan.timeout);
+        
         const response = await fetch(url.toString(), {
-          timeout: config.bscscan.timeout,
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           if (response.status === 429) {
@@ -163,9 +169,10 @@ class BSCScanAPI {
   }
 
   // 判断是否应该重试
-  private shouldRetry(error: any): boolean {
+  private shouldRetry(error: unknown): boolean {
     const retryableCodes = [408, 429, 500, 502, 503, 504];
-    return retryableCodes.includes(error.response?.status) || !error.response;
+    const axiosError = error as { response?: { status?: number } };
+    return retryableCodes.includes(axiosError.response?.status || 0) || !axiosError.response;
   }
 
   // 延迟函数
@@ -190,16 +197,15 @@ class BSCScanAPI {
       
       return result;
     } catch (error) {
-      errorHandler.handleError(
-        errorHandler.createError(
-          ErrorType.API_ERROR,
-          `获取代币信息失败: ${contractAddress}`,
-          ErrorSeverity.MEDIUM,
-          error as Error,
-          { contractAddress }
-        )
-      );
-      return null;
+      const appError = errorHandler.createError(
+         ErrorType.API_ERROR,
+         `获取代币信息失败: ${contractAddress}`,
+         ErrorSeverity.MEDIUM,
+         error as Error,
+         { contractAddress }
+       );
+       errorHandler.handleError(appError);
+       return null;
     }
   }
 
@@ -386,7 +392,7 @@ class BSCScanAPI {
   }
 
   // 获取合约源码
-  async getContractSource(contractAddress: string): Promise<any> {
+  async getContractSource(contractAddress: string): Promise<unknown> {
     try {
       const result = await this.request('contract', 'getsourcecode', {
         address: contractAddress,
@@ -428,15 +434,11 @@ class BSCScanAPI {
   }
 
   // 获取代币价格（通过交易对）
-  async getTokenPrice(contractAddress: string): Promise<ApiResponse<any>> {
+  async getTokenPrice(contractAddress: string): Promise<ApiResponse<null>> {
     // 注意：BSCScan 不直接提供价格数据，这里可以通过最近交易计算
-    const transactions = await this.getTokenTransactions(contractAddress, {
-      page: 1,
-      offset: 10,
-      sort: 'desc'
-    });
+    const transactions = await this.getTokenTransactions(contractAddress, undefined, 1, 10);
 
-    if (transactions.success && transactions.data) {
+    if (transactions && transactions.length > 0) {
       // 这里可以添加价格计算逻辑
       // 实际项目中建议使用专门的价格API如CoinGecko
       return {
@@ -446,7 +448,14 @@ class BSCScanAPI {
       };
     }
 
-    return transactions;
+    return {
+      success: false,
+      error: {
+        code: 'NO_DATA',
+        message: 'No transaction data available for price calculation',
+        timestamp: Date.now()
+      }
+    };
   }
 }
 
@@ -461,11 +470,11 @@ export const BSCScanService = {
 
   // 获取交易历史
   getTransactionHistory: (contractAddress: string, pagination?: PaginationParams) => 
-    bscscanAPI.getTokenTransactions(contractAddress, pagination),
+    bscscanAPI.getTokenTransactions(contractAddress, undefined, pagination?.page || 1, pagination?.limit || 100),
 
   // 获取持有者数据
   getHolderData: (contractAddress: string, pagination?: PaginationParams) => 
-    bscscanAPI.getTokenHolders(contractAddress, pagination),
+    bscscanAPI.getTokenHolders(contractAddress, pagination?.page || 1, pagination?.limit || 100),
 
   // 获取代币余额
   getBalance: (contractAddress: string, address: string) => 
@@ -473,11 +482,11 @@ export const BSCScanService = {
 
   // 获取总供应量
   getSupply: (contractAddress: string) => 
-    bscscanAPI.getTokenSupply(contractAddress),
+    bscscanAPI.getTotalSupply(contractAddress),
 
   // 获取转账记录
   getTransfers: (contractAddress: string, address?: string, pagination?: PaginationParams) => 
-    bscscanAPI.getTokenTransfers(contractAddress, address, pagination),
+    bscscanAPI.getTokenTransfers(contractAddress, address, pagination?.page || 1, pagination?.limit || 100),
 
   // 获取合约信息
   getContractInfo: async (contractAddress: string) => {
@@ -487,12 +496,9 @@ export const BSCScanService = {
     ]);
 
     return {
-      source: source.success ? source.data : null,
-      abi: abi.success ? abi.data : null,
-      errors: [
-        ...(source.success ? [] : [source.error]),
-        ...(abi.success ? [] : [abi.error])
-      ].filter(Boolean)
+      source: source,
+      abi: abi,
+      errors: []
     };
   }
 };

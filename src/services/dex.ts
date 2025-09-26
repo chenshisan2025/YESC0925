@@ -3,11 +3,11 @@ import type {
   PancakeSwapTokenData,
   PancakeSwapPairData,
   OneInchTokenInfo,
-  OneInchQuoteData,
+  OneInchQuote,
   ApiResponse,
-  ApiError
+  CoinGeckoTokenPrice
 } from '../types/api';
-import { apiConfig } from '../lib/config';
+import { config } from '../lib/config';
 import { errorHandler, ErrorType, ErrorSeverity, retry } from '../lib/error-handler';
 import { apiCache, priceCache, cacheKeys } from '../lib/cache-manager';
 
@@ -18,9 +18,9 @@ class PancakeSwapAPI {
   private retryAttempts: number;
 
   constructor() {
-    this.baseURL = apiConfig.pancakeSwap.baseURL;
-    this.timeout = apiConfig.pancakeSwap.timeout;
-    this.retryAttempts = apiConfig.pancakeSwap.retries;
+    this.baseURL = config.dex.pancakeswap.apiUrl;
+    this.timeout = config.bscscan.timeout;
+    this.retryAttempts = config.bscscan.retryAttempts;
   }
 
   private async makeRequest<T>(
@@ -37,26 +37,29 @@ class PancakeSwapAPI {
         data: response.data,
         message: 'Success'
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (retryCount < this.retryAttempts && this.shouldRetry(error)) {
         await this.delay(1000 * (retryCount + 1));
         return this.makeRequest<T>(endpoint, retryCount + 1);
       }
 
+      const axiosError = error as { response?: { status?: number; data?: unknown }; message?: string };
       return {
         success: false,
         error: {
-          code: error.response?.status || 'NETWORK_ERROR',
-          message: error.message || 'Request failed',
-          details: error.response?.data
+          code: axiosError.response?.status?.toString() || 'NETWORK_ERROR',
+          message: axiosError.message || 'Request failed',
+          details: axiosError.response?.data,
+          timestamp: Date.now()
         }
       };
     }
   }
 
-  private shouldRetry(error: any): boolean {
+  private shouldRetry(error: unknown): boolean {
     const retryableCodes = [408, 429, 500, 502, 503, 504];
-    return retryableCodes.includes(error.response?.status) || !error.response;
+    const axiosError = error as { response?: { status?: number } };
+    return retryableCodes.includes(axiosError.response?.status || 0) || !axiosError.response;
   }
 
   private delay(ms: number): Promise<void> {
@@ -85,20 +88,27 @@ class PancakeSwapAPI {
         apiCache.set(cacheKey, result.data);
       }
       
-      return result;
+      return {
+        success: false,
+        error: {
+          code: 'API_ERROR',
+          message: 'Failed to get token price',
+          timestamp: Date.now()
+        }
+      };
     } catch (error) {
-      errorHandler.handleError(
-        error as Error,
+      const appError = errorHandler.createError(
         ErrorType.API_ERROR,
-        ErrorSeverity.MEDIUM,
-        { tokenAddress, service: 'PancakeSwap' }
+        `PancakeSwap API error: ${(error as Error).message}`
       );
+      errorHandler.handleError(appError);
       return {
         success: false,
         error: {
           code: 'CACHE_ERROR',
           message: 'Failed to get token info',
-          details: error
+          details: error,
+          timestamp: Date.now()
         }
       };
     }
@@ -126,20 +136,27 @@ class PancakeSwapAPI {
         apiCache.set(cacheKey, result.data);
       }
       
-      return result;
+      return {
+      success: false,
+      error: {
+        code: 'API_ERROR',
+        message: 'Failed to get liquidity info',
+        timestamp: Date.now()
+      }
+    };
     } catch (error) {
-      errorHandler.handleError(
-        error as Error,
+      const appError = errorHandler.createError(
         ErrorType.API_ERROR,
-        ErrorSeverity.MEDIUM,
-        { pairAddress, service: 'PancakeSwap' }
+        `PancakeSwap API error: ${(error as Error).message}`
       );
+      errorHandler.handleError(appError);
       return {
         success: false,
         error: {
           code: 'CACHE_ERROR',
           message: 'Failed to get pair info',
-          details: error
+          details: error,
+          timestamp: Date.now()
         }
       };
     }
@@ -160,7 +177,7 @@ class PancakeSwapAPI {
         };
       }
 
-      const result = await this.makeRequest<any>(`/tokens/${tokenAddress}`);
+      const result = await this.makeRequest<{ price?: string; priceUSD?: string }>(`/tokens/${tokenAddress}`);
       
       if (result.success && result.data) {
         const priceData = {
@@ -178,20 +195,27 @@ class PancakeSwapAPI {
         };
       }
 
-      return result;
+      return {
+      success: false,
+      error: {
+        code: 'API_ERROR',
+        message: 'Failed to get volume data',
+        timestamp: Date.now()
+      }
+    };
     } catch (error) {
-      errorHandler.handleError(
-        error as Error,
+      const appError = errorHandler.createError(
         ErrorType.API_ERROR,
-        ErrorSeverity.MEDIUM,
-        { tokenAddress, service: 'PancakeSwap' }
+        `PancakeSwap API error: ${(error as Error).message}`
       );
+      errorHandler.handleError(appError);
       return {
         success: false,
         error: {
           code: 'CACHE_ERROR',
           message: 'Failed to get token price',
-          details: error
+          details: error,
+          timestamp: Date.now()
         }
       };
     }
@@ -199,7 +223,7 @@ class PancakeSwapAPI {
 
   // 获取流动性信息
   async getLiquidityInfo(tokenAddress: string): Promise<ApiResponse<{ totalLiquidity: string; liquidityUSD: string }>> {
-    const result = await this.makeRequest<any>(`/tokens/${tokenAddress}`);
+    const result = await this.makeRequest<{ totalLiquidity?: string; totalLiquidityUSD?: string }>(`/tokens/${tokenAddress}`);
     
     if (result.success && result.data) {
       return {
@@ -212,12 +236,19 @@ class PancakeSwapAPI {
       };
     }
 
-    return result;
+    return {
+      success: false,
+      error: {
+        code: 'API_ERROR',
+        message: 'Failed to get liquidity info',
+        timestamp: Date.now()
+      }
+    };
   }
 
   // 获取24小时交易量
   async getVolumeData(tokenAddress: string): Promise<ApiResponse<{ volume24h: string; volumeUSD24h: string }>> {
-    const result = await this.makeRequest<any>(`/tokens/${tokenAddress}`);
+    const result = await this.makeRequest<{ volume?: string; volumeUSD?: string }>(`/tokens/${tokenAddress}`);
     
     if (result.success && result.data) {
       return {
@@ -230,7 +261,14 @@ class PancakeSwapAPI {
       };
     }
 
-    return result;
+    return {
+      success: false,
+      error: {
+        code: 'API_ERROR',
+        message: 'Failed to get volume data',
+        timestamp: Date.now()
+      }
+    };
   }
 }
 
@@ -243,16 +281,16 @@ class OneInchAPI {
   private chainId: number;
 
   constructor() {
-    this.baseURL = apiConfig.oneinch.baseURL;
-    this.apiKey = apiConfig.oneinch.apiKey;
-    this.timeout = apiConfig.oneinch.timeout;
-    this.retryAttempts = apiConfig.oneinch.retryAttempts;
-    this.chainId = apiConfig.bsc.chainId; // BSC mainnet
+    this.baseURL = config.dex.oneinch.apiUrl;
+    this.apiKey = ''; // 1inch doesn't require API key for basic endpoints
+    this.timeout = config.bscscan.timeout;
+    this.retryAttempts = config.bscscan.retryAttempts;
+    this.chainId = config.token.chainId; // BSC mainnet
   }
 
   private async makeRequest<T>(
     endpoint: string,
-    params: Record<string, any> = {},
+    params: Record<string, string | number> = {},
     useCache: boolean = true
   ): Promise<ApiResponse<T>> {
     // 生成缓存键
@@ -312,28 +350,30 @@ class OneInchAPI {
         data: result,
         message: 'Success'
       };
-    } catch (error: any) {
-      const appError = errorHandler.handleError(
-        error as Error,
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
+      const appError = errorHandler.createError(
         ErrorType.API_ERROR,
-        ErrorSeverity.MEDIUM,
-        { endpoint, params, service: '1inch' }
+        `1inch API error: ${axiosError.message || 'Unknown error'}`
       );
-      
+      errorHandler.handleError(appError);
       return {
         success: false,
         error: {
-          code: error.response?.status || 'NETWORK_ERROR',
-          message: error.message || 'Request failed',
-          details: error.response?.data
-        }
+          code: axiosError.response?.data?.error || 'API_ERROR',
+          message: axiosError.message || 'Unknown error',
+          details: axiosError.response?.data,
+          timestamp: Date.now()
+        },
+        message: '1inch API request failed'
       };
     }
   }
 
-  private shouldRetry(error: any): boolean {
+  private shouldRetry(error: unknown): boolean {
     const retryableCodes = [408, 429, 500, 502, 503, 504];
-    return retryableCodes.includes(error.response?.status) || !error.response;
+    const axiosError = error as { response?: { status?: number } };
+    return retryableCodes.includes(axiosError.response?.status || 0) || !axiosError.response;
   }
 
   private delay(ms: number): Promise<void> {
@@ -361,13 +401,14 @@ class OneInchAPI {
     }
 
     return {
-      success: false,
-      error: {
-        code: 'TOKEN_NOT_FOUND',
-        message: 'Token not found in 1inch supported tokens',
-        details: null
-      }
-    };
+        success: false,
+        error: {
+          code: 'TOKEN_NOT_FOUND',
+          message: 'Token not found in 1inch supported tokens',
+          details: null,
+          timestamp: Date.now()
+        }
+      };
   }
 
   // 获取交换报价
@@ -375,14 +416,14 @@ class OneInchAPI {
     fromToken: string,
     toToken: string,
     amount: string
-  ): Promise<ApiResponse<OneInchQuoteData>> {
+  ): Promise<ApiResponse<OneInchQuote>> {
     const params = {
       fromTokenAddress: fromToken,
       toTokenAddress: toToken,
       amount
     };
 
-    return this.makeRequest<OneInchQuoteData>('/quote', params);
+    return this.makeRequest<OneInchQuote>('/quote', params);
   }
 
   // 获取代币价格（相对于USDT）
@@ -404,7 +445,11 @@ class OneInchAPI {
       };
     }
 
-    return quoteResult;
+    return {
+      success: false,
+      error: quoteResult.error,
+      message: quoteResult.message
+    };
   }
 }
 
@@ -416,15 +461,15 @@ class CoinGeckoAPI {
   private retryAttempts: number;
 
   constructor() {
-    this.baseURL = apiConfig.coingecko.baseURL;
-    this.apiKey = apiConfig.coingecko.apiKey;
-    this.timeout = apiConfig.coingecko.timeout;
-    this.retryAttempts = apiConfig.coingecko.retryAttempts;
+    this.baseURL = config.dex.coingecko.apiUrl;
+    this.apiKey = process.env.VITE_COINGECKO_API_KEY || '';
+    this.timeout = 10000;
+    this.retryAttempts = 3;
   }
 
   private async makeRequest<T>(
     endpoint: string,
-    params: Record<string, any> = {},
+    params: Record<string, string | number | boolean> = {},
     useCache: boolean = true
   ): Promise<ApiResponse<T>> {
     // 生成缓存键
@@ -484,28 +529,35 @@ class CoinGeckoAPI {
         data: result,
         message: 'Success'
       };
-    } catch (error: any) {
-      const appError = errorHandler.handleError(
-        error as Error,
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number; data?: unknown }; message?: string };
+      const appError = errorHandler.createError(
         ErrorType.API_ERROR,
+        axiosError.message || 'CoinGecko API请求失败',
         ErrorSeverity.MEDIUM,
+        error as Error,
         { endpoint, params, service: 'CoinGecko' }
       );
+      
+      errorHandler.handleError(appError);
       
       return {
         success: false,
         error: {
-          code: error.response?.status || 'NETWORK_ERROR',
-          message: error.message || 'Request failed',
-          details: error.response?.data
-        }
+          code: axiosError.response?.status?.toString() || 'NETWORK_ERROR',
+          message: axiosError.message || 'Request failed',
+          details: axiosError.response?.data,
+          timestamp: Date.now()
+        },
+        timestamp: Date.now()
       };
     }
   }
 
-  private shouldRetry(error: any): boolean {
+  private shouldRetry(error: unknown): boolean {
     const retryableCodes = [408, 429, 500, 502, 503, 504];
-    return retryableCodes.includes(error.response?.status) || !error.response;
+    const axiosError = error as { response?: { status?: number } };
+    return retryableCodes.includes(axiosError.response?.status || 0) || !axiosError.response;
   }
 
   private delay(ms: number): Promise<void> {
@@ -516,7 +568,7 @@ class CoinGeckoAPI {
   async getTokenPriceByContract(
     contractAddress: string,
     vsCurrency = 'usd'
-  ): Promise<ApiResponse<any>> {
+  ): Promise<ApiResponse<CoinGeckoTokenPrice>> {
     const params = {
       contract_addresses: contractAddress,
       vs_currencies: vsCurrency,
@@ -525,7 +577,7 @@ class CoinGeckoAPI {
       include_24hr_change: true
     };
 
-    return this.makeRequest<any>('/simple/token_price/binance-smart-chain', params);
+    return this.makeRequest<CoinGeckoTokenPrice>('/simple/token_price/binance-smart-chain', params);
   }
 }
 
@@ -537,7 +589,7 @@ export const coinGeckoAPI = new CoinGeckoAPI();
 // 导出统一的DEX服务
 export const DEXService = {
   // 获取代币价格（优先使用CoinGecko，备用PancakeSwap和1inch）
-  getTokenPrice: async (tokenAddress: string) => {
+  getTokenPrice: async (tokenAddress: string): Promise<ApiResponse<{ price: string; priceUSD: string; marketCap?: string; volume24h?: string; change24h?: string }>> => {
     // 首先尝试CoinGecko
     const coinGeckoResult = await coinGeckoAPI.getTokenPriceByContract(tokenAddress);
     if (coinGeckoResult.success) {
@@ -552,7 +604,7 @@ export const DEXService = {
             volume24h: data.usd_24h_vol?.toString() || '0',
             change24h: data.usd_24h_change?.toString() || '0'
           },
-          source: 'coingecko'
+          message: 'Success from CoinGecko'
         };
       }
     }
@@ -561,16 +613,32 @@ export const DEXService = {
     const pancakeResult = await pancakeSwapAPI.getTokenPrice(tokenAddress);
     if (pancakeResult.success) {
       return {
-        ...pancakeResult,
-        source: 'pancakeswap'
+        success: true,
+        data: pancakeResult.data,
+        message: 'Success from PancakeSwap'
       };
     }
 
     // 最后尝试1inch
     const oneInchResult = await oneInchAPI.getTokenPrice(tokenAddress);
+    if (oneInchResult.success) {
+      return {
+        success: true,
+        data: oneInchResult.data,
+        message: 'Success from 1inch'
+      };
+    }
+
+    // 所有API都失败
     return {
-      ...oneInchResult,
-      source: '1inch'
+      success: false,
+      error: {
+        code: 'ALL_APIS_FAILED',
+        message: '所有价格API都无法获取数据',
+        details: 'CoinGecko, PancakeSwap, and 1inch all failed',
+        timestamp: Date.now()
+      },
+      message: 'All price APIs failed'
     };
   },
 
@@ -597,8 +665,8 @@ export const DEXService = {
       pancakeswap: pancakeResult.success ? pancakeResult.data : null,
       oneinch: oneInchResult.success ? oneInchResult.data : null,
       errors: [
-        ...(pancakeResult.success ? [] : [pancakeResult.error]),
-        ...(oneInchResult.success ? [] : [oneInchResult.error])
+        ...(!pancakeResult.success && 'error' in pancakeResult && pancakeResult.error ? [pancakeResult.error] : []),
+        ...(!oneInchResult.success && 'error' in oneInchResult && oneInchResult.error ? [oneInchResult.error] : [])
       ].filter(Boolean)
     };
   },
@@ -616,9 +684,9 @@ export const DEXService = {
       liquidity: liquidityResult.success ? liquidityResult.data : null,
       volume: volumeResult.success ? volumeResult.data : null,
       errors: [
-        ...(priceResult.success ? [] : [priceResult.error]),
-        ...(liquidityResult.success ? [] : [liquidityResult.error]),
-        ...(volumeResult.success ? [] : [volumeResult.error])
+        ...(!priceResult.success && 'error' in priceResult && priceResult.error ? [priceResult.error] : []),
+        ...(!liquidityResult.success && 'error' in liquidityResult && liquidityResult.error ? [liquidityResult.error] : []),
+        ...(!volumeResult.success && 'error' in volumeResult && volumeResult.error ? [volumeResult.error] : [])
       ].filter(Boolean)
     };
   }

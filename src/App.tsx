@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import TokenInfo from './pages/TokenInfo';
@@ -21,7 +20,6 @@ function App() {
           <Route path="/faq" element={<FAQ />} />
           <Route path="/history" element={<TransactionHistory />} />
         </Routes>
-        <Toaster position="top-right" />
       </Layout>
     </Router>
   );

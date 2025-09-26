@@ -3,7 +3,7 @@ import { SWRConfiguration, SWRConfig } from 'swr';
 import { toast } from 'sonner';
 import { errorHandler, ErrorType, ErrorSeverity } from './error-handler';
 import { apiCache, priceCache } from './cache-manager';
-import { apiConfig } from './config/api';
+import { config } from './config';
 import type { ApiError } from '../types/api';
 
 // SWR全局配置

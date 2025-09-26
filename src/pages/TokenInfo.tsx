@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { useLanguage } from '../hooks/useLanguage';
 import { translations } from '../lib/translations';
-import { Copy, ExternalLink, TrendingUp, Users, DollarSign, BarChart3, Wallet, Clock, CheckCircle, AlertCircle, Filter, RefreshCw, ArrowUpRight, Activity, Zap, XCircle, Coins, Hash, FileText, Shield, Info, PieChart, Send, Receive, Swap, ArrowLeft, Download, TrendingDown, Eye, EyeOff } from 'lucide-react';
+import { Copy, ExternalLink, TrendingUp, Users, DollarSign, BarChart3, Wallet, Clock, CheckCircle, AlertCircle, Filter, RefreshCw, ArrowUpRight, Activity, Zap, XCircle, Coins, Hash, FileText, Shield, Info, PieChart, Send, ArrowLeft, Download, TrendingDown, Eye, EyeOff, ArrowDownLeft, ArrowRightLeft } from 'lucide-react';
 import yesLogoSvg from '../assets/yes-logo.svg';
 import { toast } from 'react-hot-toast';
 import { 
@@ -98,11 +98,7 @@ const TokenInfo: React.FC = () => {
         navigator.vibrate(50);
       }
       
-      toast.success(language === 'zh' ? '已复制到剪贴板' : 'Copied to clipboard', {
-        description: type === 'address' 
-          ? (language === 'zh' ? '合约地址已复制' : 'Contract address copied')
-          : undefined
-      });
+      toast.success(language === 'zh' ? '已复制到剪贴板' : 'Copied to clipboard');
       
       // 3秒后清除复制状态
       setTimeout(() => setCopiedAddress(null), 3000);

@@ -49,14 +49,14 @@ class CacheManager {
   };
 
   constructor(
-    maxSize: number = config.cache.maxSize,
+    maxSize: number = 1000,
     strategy: CacheStrategy = CacheStrategy.LRU
   ) {
     this.maxSize = maxSize;
     this.strategy = strategy;
     
     // 定期清理过期缓存
-    setInterval(() => this.cleanup(), config.cache.cleanupInterval);
+    setInterval(() => this.cleanup(), 300000); // 5分钟清理一次
   }
 
   // 获取缓存数据
@@ -119,16 +119,14 @@ class CacheManager {
         console.log(`📦 Cache set: ${key} (TTL: ${itemTtl}ms)`);
       }
     } catch (error) {
-      errorHandler.handleError(
-        errorHandler.createError(
-          ErrorType.UNKNOWN_ERROR,
-          `缓存设置失败: ${key}`,
-          ErrorSeverity.LOW,
-          error as Error,
-          { key, dataType: typeof data }
-        ),
-        false
+      const appError = errorHandler.createError(
+        ErrorType.UNKNOWN_ERROR,
+        `缓存设置失败: ${key}`,
+        ErrorSeverity.LOW,
+        error as Error,
+        { key, dataType: typeof data }
       );
+      errorHandler.handleError(appError, false);
     }
   }
 
@@ -268,15 +266,15 @@ class CacheManager {
   private getDefaultTtl(key: string): number {
     // 根据数据类型设置不同的TTL
     if (key.includes('price') || key.includes('quote')) {
-      return config.cache.priceDataTtl;
+      return 60000; // 1 minute for price data
     }
     if (key.includes('transaction') || key.includes('tx')) {
-      return config.cache.transactionDataTtl;
+      return 300000; // 5 minutes for transaction data
     }
     if (key.includes('token') || key.includes('contract')) {
-      return config.cache.tokenDataTtl;
+      return 600000; // 10 minutes for token data
     }
-    return config.cache.defaultTtl;
+    return config.cache.ttl;
   }
 
   // 更新命中率
@@ -355,8 +353,7 @@ class CacheManager {
 }
 
 // 创建不同用途的缓存实例
-export const cacheManager = new CacheManager(config.cache.maxSize, CacheStrategy.LRU);
-export const apiCache = new CacheManager(config.cache.maxSize, CacheStrategy.LRU);
+export const apiCache = new CacheManager(1000, CacheStrategy.LRU);
 export const priceCache = new CacheManager(100, CacheStrategy.TTL);
 export const tokenCache = new CacheManager(200, CacheStrategy.LFU);
 

@@ -120,7 +120,7 @@ export interface OneInchQuote {
   toToken: OneInchTokenInfo;
   toTokenAmount: string;
   fromTokenAmount: string;
-  protocols: any[];
+  protocols: unknown[];
   estimatedGas: number;
 }
 
@@ -153,12 +153,22 @@ export interface CoinGeckoTokenData {
   last_updated: string;
 }
 
+export interface CoinGeckoTokenPrice {
+  [contractAddress: string]: {
+    usd?: number;
+    usd_market_cap?: number;
+    usd_24h_vol?: number;
+    usd_24h_change?: number;
+  };
+}
+
 // Common API Response Types
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
-  error?: string;
-  timestamp: number;
+  error?: string | ApiError;
+  timestamp?: number;
+  message?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -167,6 +177,13 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   hasMore: boolean;
+}
+
+export interface PaginationParams {
+  page?: number;
+  offset?: number;
+  limit?: number;
+  sort?: string;
 }
 
 // API Configuration Types
@@ -182,7 +199,7 @@ export interface ApiConfig {
 export interface ApiError {
   code: string | number;
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp: number;
   retryCount?: number;
 }

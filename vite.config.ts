@@ -7,6 +7,28 @@ import { traeBadgePlugin } from 'vite-plugin-trae-solo-badge';
 export default defineConfig({
   build: {
     sourcemap: 'hidden',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          wagmi: ['wagmi', '@wagmi/core', '@wagmi/connectors'],
+          web3: ['viem'],
+          ui: ['framer-motion', 'lucide-react', 'react-hot-toast', 'sonner'],
+          router: ['react-router-dom'],
+          query: ['@tanstack/react-query', 'swr'],
+          utils: ['axios', 'clsx', 'tailwind-merge']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   },
   plugins: [
     react({

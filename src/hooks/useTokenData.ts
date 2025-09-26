@@ -12,7 +12,7 @@ import { apiConfig } from '../lib/config';
 
 // SWR 配置
 const swrConfig = {
-  refreshInterval: apiConfig.cache.refreshInterval,
+  refreshInterval: 30000,
   revalidateOnFocus: false,
   revalidateOnReconnect: true,
   errorRetryCount: 3,
@@ -29,8 +29,8 @@ export function useTokenInfo(contractAddress: string) {
   );
 
   return {
-    tokenInfo: data?.success ? data.data : null,
-    error: data?.success === false ? data.error : error,
+    tokenInfo: data || null,
+    error: error,
     isLoading,
     refresh: mutate
   };
@@ -49,7 +49,7 @@ export function useTokenPrice(contractAddress: string) {
 
   return {
     priceData: data?.success ? data.data : null,
-    source: data?.source || null,
+    source: null,
     error: data?.success === false ? data.error : error,
     isLoading,
     refresh: mutate
@@ -90,8 +90,8 @@ export function useTokenTransactions(
   );
 
   return {
-    transactions: data?.success ? data.data : [],
-    error: data?.success === false ? data.error : error,
+    transactions: data || [],
+    error: error,
     isLoading,
     refresh: mutate
   };
@@ -112,8 +112,8 @@ export function useTokenHolders(
   );
 
   return {
-    holders: data?.success ? data.data : [],
-    error: data?.success === false ? data.error : error,
+    holders: data || [],
+    error: error,
     isLoading,
     refresh: mutate
   };
@@ -131,8 +131,8 @@ export function useTokenBalance(contractAddress: string, userAddress: string) {
   );
 
   return {
-    balance: data?.success ? data.data : '0',
-    error: data?.success === false ? data.error : error,
+    balance: data || '0',
+    error: error,
     isLoading,
     refresh: mutate
   };
@@ -150,8 +150,8 @@ export function useTokenSupply(contractAddress: string) {
   );
 
   return {
-    totalSupply: data?.success ? data.data : '0',
-    error: data?.success === false ? data.error : error,
+    totalSupply: data || '0',
+    error: error,
     isLoading,
     refresh: mutate
   };
@@ -173,8 +173,8 @@ export function useTokenTransfers(
   );
 
   return {
-    transfers: data?.success ? data.data : [],
-    error: data?.success === false ? data.error : error,
+    transfers: data || [],
+    error: error,
     isLoading,
     refresh: mutate
   };
@@ -256,9 +256,9 @@ export function useTokenOverview(contractAddress: string) {
 
     return {
       // 基本信息
-      name: tokenInfo.tokenInfo.name || 'Unknown',
-      symbol: tokenInfo.tokenInfo.symbol || 'UNKNOWN',
-      decimals: tokenInfo.tokenInfo.decimals || '18',
+      name: tokenInfo.tokenInfo?.tokenName || 'Unknown',
+      symbol: tokenInfo.tokenInfo?.symbol || 'UNKNOWN',
+      decimals: tokenInfo.tokenInfo?.divisor || '18',
       totalSupply: supply.totalSupply || '0',
       
       // 价格信息
@@ -344,9 +344,7 @@ export function useRefreshAllTokenData() {
       key => typeof key === 'string' && (
         key.startsWith('token-') ||
         key.startsWith('swap-')
-      ),
-      undefined,
-      { revalidate: true }
+      )
     );
   };
 

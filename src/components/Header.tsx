@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Wallet, Globe, AlertTriangle } from 'lucide-react';
 import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
 import { useLanguage } from '../hooks/useLanguage';
 import { translations } from '../lib/translations';
-import { switchToBSC } from '../lib/web3';
+
 import { toast } from 'sonner';
 
 export default function Header() {
@@ -30,10 +30,9 @@ export default function Header() {
 
   // BSC网络ID
   const BSC_MAINNET_ID = 56;
-  const BSC_TESTNET_ID = 97;
   
   // 检查是否在正确的网络
-  const isCorrectNetwork = chainId === BSC_MAINNET_ID || chainId === BSC_TESTNET_ID;
+  const isCorrectNetwork = chainId === BSC_MAINNET_ID;
   
   const handleConnect = async () => {
     try {

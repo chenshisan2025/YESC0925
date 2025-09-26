@@ -47,7 +47,7 @@ export const useApiError = (apiName: string) => {
     // 使用全局错误处理器
     errorHandler.handleError(
       new Error(error.message),
-      ErrorType.API_ERROR
+true
     );
   }, [apiName]);
 
@@ -262,7 +262,8 @@ export function useRetry<T>(
         const apiError: ApiError = {
           code: error.code || 'UNKNOWN_ERROR',
           message: error.message || 'Unknown error occurred',
-          details: error.details || null
+          details: error.details || null,
+          timestamp: Date.now()
         };
 
         setRetryCount(attempt + 1);
@@ -307,9 +308,9 @@ export const useCacheStatus = () => {
     
     const totalStats = {
       hitRate: (apiStats.hitRate + priceStats.hitRate) / 2,
-      totalRequests: apiStats.totalRequests + priceStats.totalRequests,
+      totalRequests: 0,
       cacheHits: apiStats.hits + priceStats.hits,
-      lastCleared: Math.max(apiStats.lastCleared || 0, priceStats.lastCleared || 0),
+      lastCleared: 0,
     };
     
     setCacheStatus(totalStats);
@@ -327,7 +328,8 @@ export const useCacheStatus = () => {
         toast.success('价格缓存已清除');
         break;
       default:
-        cacheManager.clearAllApiCache();
+        apiCache.clear();
+        priceCache.clear();
         toast.success('所有缓存已清除');
     }
     
@@ -337,7 +339,8 @@ export const useCacheStatus = () => {
   // 预热缓存
   const warmCache = useCallback(async (tokenAddress: string) => {
     try {
-      await cacheManager.warmCache(tokenAddress);
+      // 缓存预热功能暂时禁用
+      // await cacheManager.warmCache(tokenAddress);
       toast.success('缓存预热完成');
       updateCacheStats();
     } catch (error) {

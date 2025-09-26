@@ -1,22 +1,30 @@
 import { createConfig, http } from 'wagmi';
 import { bsc, bscTestnet } from 'wagmi/chains';
-import { metaMask } from 'wagmi/connectors';
+import { metaMask, walletConnect, injected } from 'wagmi/connectors';
 
-// TypeScript声明合并，注册config类型
-declare module 'wagmi' {
-  interface Register {
-    config: typeof config
-  }
-}
+// 从环境变量获取RPC URL
+const BSC_RPC_URL = import.meta.env.VITE_BSC_RPC_URL || 'https://bsc-dataseed1.binance.org/';
+const BSC_TESTNET_RPC_URL = import.meta.env.VITE_BSC_TESTNET_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+const WALLETCONNECT_PROJECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
 
 export const config = createConfig({
   chains: [bsc, bscTestnet],
   connectors: [
+    injected(),
     metaMask(),
+    ...(WALLETCONNECT_PROJECT_ID ? [walletConnect({
+      projectId: WALLETCONNECT_PROJECT_ID,
+      metadata: {
+        name: import.meta.env.VITE_APP_NAME || 'YesCoin Web3',
+        description: import.meta.env.VITE_APP_DESCRIPTION || 'YesCoin Web3 DeFi Platform',
+        url: import.meta.env.VITE_APP_URL || 'https://yescoin-web3.vercel.app',
+        icons: [import.meta.env.VITE_APP_ICON || 'https://yescoin-web3.vercel.app/favicon.ico']
+      }
+    })] : []),
   ],
   transports: {
-    [bsc.id]: http(),
-    [bscTestnet.id]: http(),
+    [bsc.id]: http(BSC_RPC_URL),
+    [bscTestnet.id]: http(BSC_TESTNET_RPC_URL),
   },
 });
 

@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTransactionHistory, TransactionRecord } from '../hooks/useTransactionHistory';
-import { Clock, CheckCircle, AlertCircle, ExternalLink, Filter, Trash2, RefreshCw, Wallet, Activity, TrendingUp } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, ExternalLink, Filter, Trash2, RefreshCw, Wallet, Activity } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN, enUS } from 'date-fns/locale';
-import yesLogoSvg from '../assets/yes-logo.svg';
+
 
 const TransactionHistory: React.FC = () => {
   const { language } = useLanguage();
@@ -157,13 +157,12 @@ const TransactionHistory: React.FC = () => {
                 <Filter className="w-4 h-4" style={{color: 'var(--text-muted)'}} />
                 <select
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as any)}
+                  onChange={(e) => setFilterType(e.target.value as TransactionRecord['type'] | 'all')}
                   className="px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all w-full sm:w-auto"
                   style={{
                     backgroundColor: 'var(--bg-secondary)',
                     borderColor: 'var(--border-color)',
-                    color: 'var(--text-primary)',
-                    focusRingColor: 'var(--graffiti-blue)'
+                    color: 'var(--text-primary)'
                   }}
                 >
                   <option value="all">{language === 'zh' ? '所有类型' : 'All Types'}</option>
@@ -179,13 +178,12 @@ const TransactionHistory: React.FC = () => {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <select
                   value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as any)}
+                  onChange={(e) => setFilterStatus(e.target.value as TransactionRecord['status'] | 'all')}
                   className="px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
                   style={{
                     backgroundColor: 'var(--bg-secondary)',
                     borderColor: 'var(--border-color)',
-                    color: 'var(--text-primary)',
-                    focusRingColor: 'var(--graffiti-blue)'
+                    color: 'var(--text-primary)'
                   }}
                 >
                   <option value="all">{language === 'zh' ? '所有状态' : 'All Status'}</option>
